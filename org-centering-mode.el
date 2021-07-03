@@ -22,6 +22,7 @@
 (require 'cl-lib)
 (require 'org)
 
+;;;###autoload
 (define-minor-mode org-centering-mode
   "Minor mode for centering org mode inline overlays."
   :init-value nil :lighter nil :global nil
