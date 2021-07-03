@@ -22,17 +22,59 @@
 (require 'cl-lib)
 (require 'org)
 
+(defvar org-centering--buffers nil
+  "List of buffers in which `org-centering-mode' is activated.")
+
+(defun org-centering--kill-buffer-function ()
+  "Disable `org-centering-mode' before killing a buffer, if necessary.
+This function is for use in `kill-buffer-hook'.  It checks whether
+`org-centering-mode' is enabled in the buffer to be killed and
+adjusts `org-centering--buffers' and the global effects accordingly."
+  (when org-centering-mode
+    (setq org-centering--buffers (delq (current-buffer) org-centering--buffers))
+    (when (not org-centering--buffers)
+      (org-centering--unset-global-effects))))
+
+(add-hook 'kill-buffer-hook #'org-centering--kill-buffer-function)
+
+(defun org-centering--enable ()
+  "Set up org-centering-mode for the current buffer.
+Also run the functions in `org-centering-global-effects' if the
+current buffer is the first buffer in which `org-centering-mode' is
+activated."
+  ;; Activate global effects.
+  (when (not org-centering--buffers)
+    (org-centering--set-global-effects))
+  (push (current-buffer) org-centering--buffers))
+
+(defun org-centering--set-global-effects ()
+  "Activate global effects."
+  (advice-add #'org-display-inline-images :around #'+org-inlineimage-ensure-centering-a)
+  (advice-add #'org--make-preview-overlay :after #'+org-latex-ensure-centering-a))
+
+(defun org-centering--disable ()
+  "Reset the current buffer to its normal appearance.
+Also run the functions in `org-centering-global-effects' to undo
+their effects if `org-centering-mode' is deactivated in the last
+buffer in which it was active."
+  ;; Restore global effects if necessary.
+  (setq org-centering--buffers (delq (current-buffer) org-centering--buffers))
+  (when (not org-centering--buffers)
+    (org-centering--unset-global-effects)))
+
+(defun org-centering--unset-global-effects ()
+  "Deactivate global effects."
+  (advice-remove #'org-display-inline-images #'+org-inlineimage-ensure-centering-a)
+  (advice-remove #'org--make-preview-overlay #'+org-latex-ensure-centering-a))
+
 ;;;###autoload
 (define-minor-mode org-centering-mode
   "Minor mode for centering org mode inline overlays."
   :init-value nil :lighter nil :global nil
   (+org-toggle-inlinefrags-center-h org-centering-mode)
   (if org-centering-mode
-      (progn
-        (advice-add #'org-display-inline-images :around #'+org-inlineimage-ensure-centering-a)
-        (advice-add #'org--make-preview-overlay :after #'+org-latex-ensure-centering-a))
-    (advice-remove #'org-display-inline-images #'+org-inlineimage-ensure-centering-a)
-    (advice-remove #'org--make-preview-overlay #'+org-latex-ensure-centering-a)))
+      (org-centering--enable)
+    (org-centering--disable)))
 
 (defun +org-inlineimage-ensure-centering-a (orig-fn &rest args)
   (if org-centering-mode
