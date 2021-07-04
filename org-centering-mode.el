@@ -89,7 +89,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
           (setq plist (cddr plist)))
         p)
     (unless delete?
-      `(,property ,value . plist))))
+      `(,property ,value . ,plist))))
 
 (defun +org-inlineimage-ensure-centering-a (orig-fn &rest args)
   (if org-centering-mode
