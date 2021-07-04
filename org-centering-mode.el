@@ -80,14 +80,18 @@ buffer in which it was active."
   "Update PROPERTY from PLIST with VALUE unless DELETE?
 This has no side effect. If DELETE? is true and works like `org-plist-delete'."
   (if (plist-get plist property)
-      (let (p)
-        (while plist
-          (if (not (eq property (car plist)))
-              (setq p (plist-put p (car plist) (nth 1 plist)))
-            (unless delete?
-              (setq p (plist-put p (car plist) value))))
-          (setq plist (cddr plist)))
-        p)
+      (pcase-let ((`(,head ,hval ,plist) plist))
+        (if (eq property head)
+            (if delete?
+                plist
+              `(,property ,value . ,plist))
+          (let ((p (list head hval)))
+            (while plist
+              (if (not (eq property (car plist)))
+                  (setq p (plist-put p (car plist) (nth 1 plist)))
+                (unless delete?
+                  (setq p (plist-put p (car plist) value))))
+              (setq plist (cddr plist))))))
     (unless delete?
       `(,property ,value . ,plist))))
 
