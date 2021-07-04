@@ -85,14 +85,21 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
             (if delete?
                 plist
               `(,property ,value . ,plist))
-          (let ((p (list head hval)))
-            (while plist
-              (if (not (eq property (car plist)))
-                  (setq p (plist-put p (car plist) (nth 1 plist)))
-                (unless delete?
-                  (setq p (plist-put p (car plist) value))))
-              (setq plist (cddr plist))))))
-    (unless delete?
+          (let* ((lastcell (cons hval nil))
+                 (p (cons head lastcell)))
+            (setcdr lastcell
+                    (catch 'found
+                      (while t
+                        (pcase-let ((`(,head ,hval . ,tplist) plist))
+                          (if (eq property head)
+                              (throw 'found tplist)
+                            (setq p `(,head ,hval . ,p)))
+                          (setq plist tplist)))))
+            (if delete?
+                p
+              `(,property ,value . ,p)))))
+    (if delete?
+        plist
       `(,property ,value . ,plist))))
 
 (defun +org-inlineimage-ensure-centering-a (orig-fn &rest args)
