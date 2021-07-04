@@ -76,6 +76,21 @@ buffer in which it was active."
       (org-centering--enable)
     (org-centering--disable)))
 
+(defun org-centering-plist-update (plist property &optional delete? value)
+  "Update PROPERTY from PLIST with VALUE unless DELETE?
+This has no side effect. If DELETE? is true and works like `org-plist-delete'."
+  (if (plist-get plist property)
+      (let (p)
+        (while plist
+          (if (not (eq property (car plist)))
+              (setq p (plist-put p (car plist) (nth 1 plist)))
+            (unless delete?
+              (setq p (plist-put p (car plist) value))))
+          (setq plist (cddr plist)))
+        p)
+    (unless delete?
+      `(,property ,value . plist))))
+
 (defun +org-inlineimage-ensure-centering-a (orig-fn &rest args)
   (if org-centering-mode
       (let
@@ -90,25 +105,10 @@ buffer in which it was active."
                 (if
                     (eq prop 'display)
                     (let*
-                        ((width
-                          (car
-                           (image-size img 'pixel)))
-                         (offset
-                          (max
-                           (floor
-                            (/
-                             (-
-                              (window-text-width nil 'pixel)
-                              width)
-                             2))
-                           0)))
+                        ((width (car (image-size img 'pixel)))
+                         (offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
                       (setq img
-                            (cons
-                             (car img)
-                             `(:margin
-                               (,offset . 0)
-                               \,
-                               (cdr img))))))
+                            (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0))))))
                 (funcall overlay-put ov prop img))))
           (ignore overlay-put)
           (apply orig-fn args)))
@@ -123,7 +123,7 @@ buffer in which it was active."
                (img (overlay-get ov 'display))
                (width (car (image-size img 'pixel)))
                (offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
-          (setq img (cons (car img) `(:margin (,offset . 0) . ,(cdr img))))
+          (setq img (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0))))
           (overlay-put ov 'display img)))))
 
 (defun +org-toggle-inlinefrags-center-h (enable?)
@@ -140,9 +140,8 @@ buffer in which it was active."
       (if enable?
           (let* ((width (car (image-size img 'pixel)))
                  (offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
-            (setq img (cons (car img) `(:margin (,offset . 0) . ,(cdr img)))))
-        (if (eq (cadr img) :margin)
-            (setq img (cons (car img) (cdddr img)))))
+            (setq img (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0)))))
+        (setq img (cons (car img) (org-centering-plist-update (cdr img) :margin 'delete))))
       (overlay-put ov 'display img))))
 
 (provide 'org-centering-mode)
