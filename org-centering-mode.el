@@ -80,7 +80,7 @@ buffer in which it was active."
   "Update PROPERTY from PLIST with VALUE unless DELETE?
 This has no side effect. If DELETE? is true and works like `org-plist-delete'."
   (if (plist-get plist property)
-      (pcase-let ((`(,head ,hval ,plist) plist))
+      (pcase-let ((`(,head ,hval . ,plist) plist))
         (if (eq property head)
             (if delete?
                 plist
@@ -123,7 +123,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
       (unless (or (eq (char-after beg) ?$)
                   (eq (char-after (1+ beg)) ?\() ;assume first is \\
                   )
-        (let* ((ov (car (overlays-at beg)))
+        (let* ((ov (cl-find-if (lambda (o) (overlay-get o 'org-overlay-type)) (overlays-at beg)))
                (img (overlay-get ov 'display))
                (width (car (image-size img 'pixel)))
                (offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
