@@ -173,7 +173,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                   (if (string-match org-centering-numbering-environments-regexp
                                     (buffer-substring-no-properties
                                      beg
-                                     (save-excursion (end-of-line) (point))))
+                                     (save-excursion (goto-char beg) (end-of-line) (point))))
                       (setq width (* 2 (- img-width 530)))
                     (setq width img-width))
                   (overlay-put ov 'before-string
