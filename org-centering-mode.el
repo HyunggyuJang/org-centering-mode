@@ -150,9 +150,10 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
               (setq width (* 2 (- img-width 530)))
             (setq width img-width))
           (overlay-put ov 'before-string
-                       (make-string (round (- (window-text-width nil 'pixel)
-                                              width)
-                                           (* 2 7))
+                       (make-string (max 0
+                                         (round (- (window-text-width nil 'pixel)
+                                                   width)
+                                                (* 2 7)))
                                     ? ))))))
 
 (defun org-centering-enable-inlinefrags ()
@@ -177,9 +178,10 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                       (setq width (* 2 (- img-width 530)))
                     (setq width img-width))
                   (overlay-put ov 'before-string
-                               (make-string (round (- (window-text-width nil 'pixel)
-                                                      width)
-                                                   (* 2 7))
+                               (make-string (max 0
+                                                 (round (- (window-text-width nil 'pixel)
+                                                           width)
+                                                        (* 2 7)))
                                             ? )))))))))
 
 (defun org-centering-disable-inlinefrags ()
