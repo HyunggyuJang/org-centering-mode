@@ -130,6 +130,10 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
   (regexp-opt (mapcar (lambda (env) (format "\\begin{%s}" env)) '("align" "equation" "gather")))
   "LaTeX fragments with numbering label.")
 
+(defcustom org-centering--numbering-label-width
+  1069
+  "Full width of numbering label.")
+
 (defsubst org-centering--inline-math? (beg)
   "Test whether BEG is a starting delimiter of inline math fragment."
   (or (eq (char-after beg) ?$)
@@ -147,7 +151,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                             (buffer-substring-no-properties
                              beg
                              (save-excursion (end-of-line) (point))))
-              (setq width (* 2 (- img-width 530)))
+              (setq width (- (* 2 img-width) org-centering--numbering-label-width))
             (setq width img-width))
           (overlay-put ov 'before-string
                        (make-string (max 0
@@ -175,7 +179,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                                     (buffer-substring-no-properties
                                      beg
                                      (save-excursion (goto-char beg) (end-of-line) (point))))
-                      (setq width (* 2 (- img-width 530)))
+                      (setq width  (- (* 2 img-width) org-centering--numbering-label-width))
                     (setq width img-width))
                   (overlay-put ov 'before-string
                                (make-string (max 0
