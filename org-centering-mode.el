@@ -150,14 +150,15 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
           (if (string-match org-centering-numbering-environments-regexp
                             (buffer-substring-no-properties
                              beg
-                             (save-excursion (end-of-line) (point))))
+                             (point-at-eol)))
               (setq width (- (* 2 img-width) org-centering--numbering-label-width))
             (setq width img-width))
           (overlay-put ov 'before-string
                        (make-string (max 0
-                                         (round (- (window-text-width nil 'pixel)
-                                                   width)
-                                                (* 2 7)))
+                                         (- (round (- (window-text-width nil 'pixel)
+                                                      width)
+                                                   (* 2 7))
+                                            (- (point-at-bol) beg)))
                                     ? ))))))
 
 (defun org-centering-enable-inlinefrags ()
@@ -183,9 +184,10 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                     (setq width img-width))
                   (overlay-put ov 'before-string
                                (make-string (max 0
-                                                 (round (- (window-text-width nil 'pixel)
+                                                 (- (round (- (window-text-width nil 'pixel)
                                                            width)
-                                                        (* 2 7)))
+                                                           (* 2 7))
+                                                    (- (save-excursion (goto-char beg) (point-at-bol)) beg)))
                                             ? )))))))))
 
 (defun org-centering-disable-inlinefrags ()
