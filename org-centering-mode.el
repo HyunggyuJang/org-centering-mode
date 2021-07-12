@@ -141,6 +141,8 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
       ))
 
 (defun org-centering-ensure-latex-centering-a (beg end image &optional imagetype)
+  "Assume to be used as an advice for `org--make-preview-overlay'.
+As `org--make-preview-overlay' ensure to position point at BEG, we also rely this fact implicitly."
   (if org-centering-mode
       (unless (org-centering--inline-math? beg)
         (let* ((ov (cl-find-if (lambda (o) (overlay-get o 'org-overlay-type)) (overlays-at beg)))
@@ -158,7 +160,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                                          (- (round (- (window-text-width nil 'pixel)
                                                       width)
                                                    (* 2 7))
-                                            (- (point-at-bol) beg)))
+                                            (- beg (point-at-bol))))
                                     ? ))))))
 
 (defun org-centering-enable-inlinefrags ()
@@ -187,7 +189,7 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                                                  (- (round (- (window-text-width nil 'pixel)
                                                            width)
                                                            (* 2 7))
-                                                    (- (save-excursion (goto-char beg) (point-at-bol)) beg)))
+                                                    (- beg (save-excursion (goto-char beg) (point-at-bol)))))
                                             ? )))))))))
 
 (defun org-centering-disable-inlinefrags ()
