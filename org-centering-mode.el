@@ -114,13 +114,15 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                (function overlay-put))
               (lambda
                 (ov prop img)
-                (if
-                    (eq prop 'display)
-                    (let*
-                        ((width (car (image-size img 'pixel)))
-                         (offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
-                      (setq img
-                            (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0))))))
+                (if (eq prop 'display)
+                    (let ((beg (overlay-start ov)))
+                      (when (save-excursion (goto-char beg) (eq beg (point-at-bol)))
+                        (let ((width (car (image-size img 'pixel))))
+                          (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
+                              (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
+                          (let ((offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
+                            (setq img
+                                  (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0)))))))))
                 (funcall overlay-put ov prop img))))
           (ignore overlay-put)
           (apply orig-fn args)))
@@ -167,11 +169,15 @@ As `org--make-preview-overlay' ensure to position point at BEG, we also rely thi
   "Enable centering for existing inline fragments in current visible buffer."
   (dolist (ov (ignore-errors (overlays-in (point-min) (point-max))))
     (if (overlay-get ov 'org-image-overlay)
-        (let* ((img (overlay-get ov 'display))
-               (width (car (image-size img 'pixel)))
-               (offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
-          (overlay-put ov 'display
-                       (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0)))))
+        (let ((beg (overlay-start ov)))
+          (when (save-excursion (goto-char beg) (eq beg (point-at-bol)))
+            (let* ((img (overlay-get ov 'display))
+                   (width (car (image-size img 'pixel))))
+              (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
+                  (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
+              (let ((offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
+                (overlay-put ov 'display
+                             (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0))))))))
       (if (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay)
           (let ((beg (overlay-start ov)))
             (if (not (org-centering--inline-math? beg))
@@ -187,7 +193,7 @@ As `org--make-preview-overlay' ensure to position point at BEG, we also rely thi
                   (overlay-put ov 'before-string
                                (make-string (max 0
                                                  (- (round (- (window-text-width nil 'pixel)
-                                                           width)
+                                                              width)
                                                            (* 2 7))
                                                     (- beg (save-excursion (goto-char beg) (point-at-bol)))))
                                             ? )))))))))
