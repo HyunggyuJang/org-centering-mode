@@ -77,32 +77,6 @@ buffer in which it was active."
       (org-centering--enable)
     (org-centering--disable)))
 
-(defun org-centering-plist-update (plist property &optional delete? value)
-  "Update PROPERTY from PLIST with VALUE unless DELETE?
-This has no side effect. If DELETE? is true and works like `org-plist-delete'."
-  (if (plist-get plist property)
-      (pcase-let ((`(,head ,hval . ,plist) plist))
-        (if (eq property head)
-            (if delete?
-                plist
-              `(,property ,value . ,plist))
-          (let* ((lastcell (cons hval nil))
-                 (p (cons head lastcell)))
-            (setcdr lastcell
-                    (catch 'found
-                      (while t
-                        (pcase-let ((`(,head ,hval . ,tplist) plist))
-                          (if (eq property head)
-                              (throw 'found tplist)
-                            (setq p `(,head ,hval . ,p)))
-                          (setq plist tplist)))))
-            (if delete?
-                p
-              `(,property ,value . ,p)))))
-    (if delete?
-        plist
-      `(,property ,value . ,plist))))
-
 (defun org-centering-ensure-inlineimage-centering-a (orig-fn &rest args)
   (if org-centering-mode
       (let
@@ -120,9 +94,8 @@ This has no side effect. If DELETE? is true and works like `org-plist-delete'."
                         (let ((width (car (image-size img 'pixel))))
                           (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
                               (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
-                          (let ((offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
-                            (setq img
-                                  (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0)))))))))
+                          (let ((offset (max (round (- (window-text-width nil 'pixel) width) (* 2 7)) 0)))
+                            (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'org-latex-and-related)))))))
                 (funcall overlay-put ov prop img))))
           (ignore overlay-put)
           (apply orig-fn args)))
@@ -175,9 +148,8 @@ As `org--make-preview-overlay' ensure to position point at BEG, we also rely thi
                    (width (car (image-size img 'pixel))))
               (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
                   (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
-              (let ((offset (max (floor (/ (- (window-text-width nil 'pixel) width) 2)) 0)))
-                (overlay-put ov 'display
-                             (cons (car img)  (org-centering-plist-update (cdr img) :margin nil (cons offset 0))))))))
+              (let ((offset (max (round (- (window-text-width nil 'pixel) width) (* 2 7)) 0)))
+                (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'org-latex-and-related))))))
       (if (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay)
           (let ((beg (overlay-start ov)))
             (if (not (org-centering--inline-math? beg))
@@ -201,14 +173,9 @@ As `org--make-preview-overlay' ensure to position point at BEG, we also rely thi
 (defun org-centering-disable-inlinefrags ()
   "Disable centering for existing inline fragments in current visible buffer."
   (dolist (ov (ignore-errors (overlays-in (point-min) (point-max))))
-    (if (overlay-get ov 'org-image-overlay)
-        (let ((img (overlay-get ov 'display)))
-          (overlay-put ov 'display
-                       (cons (car img) (org-centering-plist-update (cdr img) :margin 'delete))))
-      (if (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay)
-          (let ((beg (overlay-start ov)))
-            (if (not (org-centering--inline-math? beg))
-                (overlay-put ov 'before-string "")))))))
+    (if (or (overlay-get ov 'org-image-overlay)
+            (and (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay) (org-centering--inline-math? (overlay-start ov))))
+        (overlay-put ov 'before-string ""))))
 
 (provide 'org-centering-mode)
 ;;; org-centering-mode.el ends here
