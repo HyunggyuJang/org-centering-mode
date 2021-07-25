@@ -174,7 +174,7 @@ As `org--make-preview-overlay' ensure to position point at BEG, we also rely thi
   "Disable centering for existing inline fragments in current visible buffer."
   (dolist (ov (ignore-errors (overlays-in (point-min) (point-max))))
     (if (or (overlay-get ov 'org-image-overlay)
-            (and (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay) (org-centering--inline-math? (overlay-start ov))))
+            (and (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay) (not (org-centering--inline-math? (overlay-start ov)))))
         (overlay-put ov 'before-string ""))))
 
 (provide 'org-centering-mode)
