@@ -22,41 +22,84 @@
 (require 'cl-lib)
 (require 'org)
 
+(defvar org-centering--buffers nil
+  "List of buffers in which `org-centering-mode' is activated.")
+
+(defun org-centering--kill-buffer-function ()
+  "Disable `org-centering-mode' before killing a buffer, if necessary.
+This function is for use in `kill-buffer-hook'.  It checks whether
+`org-centering-mode' is enabled in the buffer to be killed and
+adjusts `org-centering--buffers' and the global effects accordingly."
+  (when org-centering-mode
+    (setq org-centering--buffers (delq (current-buffer) org-centering--buffers))
+    (when (not org-centering--buffers)
+      (org-centering--unset-global-effects))))
+
+(add-hook 'kill-buffer-hook #'org-centering--kill-buffer-function)
+
+(defun org-centering--enable ()
+  "Set up org-centering-mode for the current buffer.
+Also run the functions in `org-centering-global-effects' if the
+current buffer is the first buffer in which `org-centering-mode' is
+activated."
+  ;; Activate global effects.
+  (when (not org-centering--buffers)
+    (org-centering--set-global-effects))
+  (push (current-buffer) org-centering--buffers)
+  (org-centering-enable-inlinefrags))
+
+(defun org-centering--set-global-effects ()
+  "Activate global effects."
+  (advice-add #'org-display-inline-images :around #'org-centering-ensure-inlineimage-centering-a)
+  (advice-add #'org--make-preview-overlay :after #'org-centering-ensure-latex-centering-a))
+
+(defun org-centering--disable ()
+  "Reset the current buffer to its normal appearance.
+Also run the functions in `org-centering-global-effects' to undo
+their effects if `org-centering-mode' is deactivated in the last
+buffer in which it was active."
+  (org-centering-disable-inlinefrags)
+  ;; Restore global effects if necessary.
+  (setq org-centering--buffers (delq (current-buffer) org-centering--buffers))
+  (when (not org-centering--buffers)
+    (org-centering--unset-global-effects)))
+
+(defun org-centering--unset-global-effects ()
+  "Deactivate global effects."
+  (advice-remove #'org-display-inline-images #'org-centering-ensure-inlineimage-centering-a)
+  (advice-remove #'org--make-preview-overlay #'org-centering-ensure-latex-centering-a))
+
 ;;;###autoload
 (define-minor-mode org-centering-mode
   "Minor mode for centering org mode inline overlays."
   :init-value nil :lighter nil :global nil
   (if org-centering-mode
-      (progn
-        (add-function :around (local 'org-display-inline-images) #'org-centering-ensure-inlineimage-centering-a)
-        (add-function :after (local 'org--make-preview-overlay) #'org-centering-ensure-latex-centering-a)
-        (org-centering-enable-inlinefrags))
-    (org-centering-disable-inlinefrags)
-    (remove-function (local 'org-display-inline-images) #'org-centering-ensure-inlineimage-centering-a)
-    (remove-function (local 'org--make-preview-overlay) #'org-centering-ensure-latex-centering-a)))
+      (org-centering--enable)
+    (org-centering--disable)))
 
 (defun org-centering-ensure-inlineimage-centering-a (orig-fn &rest args)
-  (let
-      ((overlay-put
-        (symbol-function
-         (function overlay-put))))
-    (cl-letf
-        (((symbol-function
-           (function overlay-put))
-          (lambda
-            (ov prop img)
-            (if (eq prop 'display)
-                (let ((beg (overlay-start ov)))
-                  (when (save-excursion (goto-char beg) (eq beg (point-at-bol)))
-                    (let ((width (car (image-size img 'pixel))))
-                      (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
-                          (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
-                      (let ((offset (max (round (- (window-text-width nil 'pixel) width) (* 2 7)) 0)))
-                        (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'org-latex-and-related)))))))
-            (funcall overlay-put ov prop img))))
-      (ignore overlay-put)
-      (apply orig-fn args)))
-    (apply orig-fn args))
+  (if org-centering-mode
+      (let
+          ((overlay-put
+            (symbol-function
+             (function overlay-put))))
+        (cl-letf
+            (((symbol-function
+               (function overlay-put))
+              (lambda
+                (ov prop img)
+                (if (eq prop 'display)
+                    (let ((beg (overlay-start ov)))
+                      (when (save-excursion (goto-char beg) (eq beg (point-at-bol)))
+                        (let ((width (car (image-size img 'pixel))))
+                          (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
+                              (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
+                          (let ((offset (max (round (- (window-text-width nil 'pixel) width) (* 2 7)) 0)))
+                            (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'org-latex-and-related)))))))
+                (funcall overlay-put ov prop img))))
+          (ignore overlay-put)
+          (apply orig-fn args)))
+    (apply orig-fn args)))
 
 (defcustom org-centering-numbering-environments-regexp
   (regexp-opt (mapcar (lambda (env) (format "\\begin{%s}" env)) '("align" "equation" "gather")))
@@ -75,24 +118,25 @@
 (defun org-centering-ensure-latex-centering-a (beg end image &optional imagetype)
   "Assume to be used as an advice for `org--make-preview-overlay'.
 As `org--make-preview-overlay' ensure to position point at BEG, we also rely this fact implicitly."
-  (unless (org-centering--inline-math? beg)
-    (let* ((ov (cl-find-if (lambda (o) (overlay-get o 'org-overlay-type)) (overlays-at beg)))
-           (img (overlay-get ov 'display))
-           (img-width (car (image-size img 'pixel)))
-           width)
-      (if (string-match org-centering-numbering-environments-regexp
-                        (buffer-substring-no-properties
-                         beg
-                         (point-at-eol)))
-          (setq width (- (* 2 img-width) org-centering--numbering-label-width))
-        (setq width img-width))
-      (overlay-put ov 'before-string
-                   (make-string (max 0
-                                     (- (round (- (window-text-width nil 'pixel)
-                                                  width)
-                                               (* 2 7))
-                                        (- beg (point-at-bol))))
-                                ? )))))
+  (if org-centering-mode
+      (unless (org-centering--inline-math? beg)
+        (let* ((ov (cl-find-if (lambda (o) (overlay-get o 'org-overlay-type)) (overlays-at beg)))
+               (img (overlay-get ov 'display))
+               (img-width (car (image-size img 'pixel)))
+               width)
+          (if (string-match org-centering-numbering-environments-regexp
+                            (buffer-substring-no-properties
+                             beg
+                             (point-at-eol)))
+              (setq width (- (* 2 img-width) org-centering--numbering-label-width))
+            (setq width img-width))
+          (overlay-put ov 'before-string
+                       (make-string (max 0
+                                         (- (round (- (window-text-width nil 'pixel)
+                                                      width)
+                                                   (* 2 7))
+                                            (- beg (point-at-bol))))
+                                    ? ))))))
 
 (defun org-centering-enable-inlinefrags ()
   "Enable centering for existing inline fragments in current visible buffer."
