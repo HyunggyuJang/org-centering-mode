@@ -135,7 +135,7 @@ buffer in which it was active."
     (if (string-match org-centering-numbering-environments-regexp
                       (buffer-substring-no-properties
                        beg
-                       (point-at-eol)))
+                       (save-excursion (goto-char beg) (end-of-line) (point))))
         (setq width (- (* 2 width) org-centering--numbering-label-width)))
     (overlay-put ov 'before-string
                  (make-string (max 0
