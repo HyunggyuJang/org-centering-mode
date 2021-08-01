@@ -131,18 +131,21 @@ buffer in which it was active."
 
 (defsubst org-centering--latex-centering-internal (ov beg)
   "Internal function for centering latex fragments."
-  (let ((width (car (image-size (overlay-get ov 'display) 'pixel))))
+  (let ((width (car (image-size (overlay-get ov 'display) 'pixel)))
+        offset)
     (if (string-match org-centering-numbering-environments-regexp
                       (buffer-substring-no-properties
                        beg
-                       (save-excursion (goto-char beg) (end-of-line) (point))))
+                       (save-excursion (goto-char beg)
+                                       (setq offset (- beg (point-at-bol)))
+                                       (point-at-eol))))
         (setq width (- (* 2 width) org-centering--numbering-label-width)))
     (overlay-put ov 'before-string
                  (make-string (max 0
                                    (- (round (- (window-text-width nil 'pixel)
                                                 width)
                                              (* 2 org-centering--char-pixel-width))
-                                      (- beg (point-at-bol))))
+                                      offset))
                               ? ))))
 
 (defun org-centering-ensure-latex-centering-a (beg end image &optional imagetype)
