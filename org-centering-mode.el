@@ -120,7 +120,7 @@ buffer in which it was active."
   "LaTeX fragments with numbering label.")
 
 (defcustom org-centering--numbering-label-width
-  1069
+  1169
   "Full width of numbering label.")
 
 (defsubst org-centering--inline-math? (beg)
@@ -161,7 +161,7 @@ As `org--make-preview-overlay' ensure to position point at BEG, we also rely thi
   "Enable centering for existing inline fragments in current visible buffer."
   (dolist (ov (ignore-errors (overlays-in (point-min) (point-max))))
     (if (overlay-get ov 'org-image-overlay)
-        (org-centering--inlineimage-centering-internal ov (overlay-get ov 'display))
+        (org-centering--inlineimage-centering-internal ov (overlay-get ov 'display) )
       (if (eq (overlay-get ov 'org-overlay-type) 'org-latex-overlay)
           (let ((beg (overlay-start ov)))
             (unless (org-centering--inline-math? beg)
