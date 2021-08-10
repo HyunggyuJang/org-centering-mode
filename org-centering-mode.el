@@ -55,6 +55,7 @@ activated."
 (defun org-centering--set-global-effects ()
   "Activate global effects."
   (advice-add #'org-display-inline-images :around #'org-centering-ensure-inlineimage-centering-a)
+  (advice-add #'+org-pretty-table :around #'org-centering-ensure-inlineimage-centering-a)
   (advice-add #'org--make-preview-overlay :after #'org-centering-ensure-latex-centering-a))
 
 (defun org-centering--disable ()
@@ -71,6 +72,7 @@ buffer in which it was active."
 (defun org-centering--unset-global-effects ()
   "Deactivate global effects."
   (advice-remove #'org-display-inline-images #'org-centering-ensure-inlineimage-centering-a)
+  (advice-remove #'+org-pretty-table #'org-centering-ensure-inlineimage-centering-a)
   (advice-remove #'org--make-preview-overlay #'org-centering-ensure-latex-centering-a))
 
 ;;;###autoload
