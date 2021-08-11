@@ -37,7 +37,9 @@
 (defcustom org-centering-contingent-inline-mode nil
   "Whether treat consequtive images as one image."
   :type 'boolean
-  :group 'org-centering)
+  :group 'org-centering
+  :safe 'booleanp
+  :local 'permanent)
 
 (defun org-centering--kill-buffer-function ()
   "Disable `org-centering-mode' before killing a buffer, if necessary.
