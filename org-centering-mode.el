@@ -139,10 +139,20 @@ buffer in which it was active."
 
 (defcustom org-centering-numbering-environments-regexp
   (regexp-opt (mapcar (lambda (env) (format "\\begin{%s}" env)) '("align" "equation" "gather")))
-  "LaTeX fragments with numbering label.")
+  "LaTeX fragments with numbering label."
+  :type 'string
+  :group 'org-centering)
 
-(defcustom org-centering--numbering-label-width
-  1169
+(defvar org-centering--numbering-label-width
+  (if (fboundp '+org-get-latex-fragment-img)
+      (let ((reference-width
+             (car (image-size (+org-get-latex-fragment-img "\\[.\\]") 'pixel)))
+            (tagged-width
+             (car (image-size (+org-get-latex-fragment-img "\\begin{equation}\\tag{1}
+.
+\\end{equation}") 'pixel))))
+        (- (* 2 tagged-width) reference-width))
+  1169)
   "Full width of numbering label.")
 
 (defsubst org-centering--inline-math? (beg)
