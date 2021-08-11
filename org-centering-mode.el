@@ -22,12 +22,22 @@
 (require 'cl-lib)
 (require 'org)
 
+(defgroup org-centering nil
+  "Snippet expansions mid-typing."
+  :prefix "org-centering-"
+  :group 'org-centering)
+
 (defvar org-centering--buffers nil
   "List of buffers in which `org-centering-mode' is activated.")
 
 (defvar org-centering--char-pixel-width
   (frame-char-width)
   "Character width in pixel size.")
+
+(defcustom org-centering-contingent-inline-mode nil
+  "Whether treat consequtive images as one image."
+  :type 'boolean
+  :group 'org-centering)
 
 (defun org-centering--kill-buffer-function ()
   "Disable `org-centering-mode' before killing a buffer, if necessary.
@@ -94,8 +104,16 @@ buffer in which it was active."
                 (setq offset (skip-syntax-forward " " (line-end-position)))
                 (eq beg (point)))
           (setq width (car (image-size img 'pixel)))
-          (if-let ((contingent-ov (cl-find-if (lambda (o) (overlay-get o 'org-image-overlay)) (overlays-at (1+ (overlay-end ov))))))
-              (setq width (+ width (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
+          (if-let ((contingent-ov
+                    (and
+                     org-centering-contingent-inline-mode
+                     (cl-find-if
+                      (lambda (o)
+                        (overlay-get o 'org-image-overlay))
+                      (overlays-at (1+ (overlay-end ov)))))))
+              (setq width
+                    (+ width
+                       (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
           (setq offset (max (- (round (- (window-text-width nil 'pixel) width) (* 2 org-centering--char-pixel-width)) offset) 0))
           (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'org-latex-and-related)))))
 
