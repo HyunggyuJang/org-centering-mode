@@ -143,16 +143,19 @@ buffer in which it was active."
   :type 'string
   :group 'org-centering)
 
+(defvar org-centring--label-width-cache nil)
+
 (defvar org-centering--numbering-label-width
-  (if (fboundp '+org-get-latex-fragment-img)
-      (let ((reference-width
-             (car (image-size (+org-get-latex-fragment-img "\\[.\\]") 'pixel)))
-            (tagged-width
-             (car (image-size (+org-get-latex-fragment-img "\\begin{equation}\\tag{1}
+  (or org-centring--label-width-cache
+      (and (fboundp '+org-get-latex-fragment-img)
+           (let ((reference-width
+                  (car (image-size (+org-get-latex-fragment-img "\\[.\\]") 'pixel)))
+                 (tagged-width
+                  (car (image-size (+org-get-latex-fragment-img "\\begin{equation}\\tag{1}
 .
 \\end{equation}") 'pixel))))
-        (- (* 2 tagged-width) reference-width))
-  1169)
+             (- (* 2 tagged-width) reference-width)))
+      1169)
   "Full width of numbering label.")
 
 (defsubst org-centering--inline-math? (beg)
