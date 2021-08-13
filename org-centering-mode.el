@@ -143,10 +143,10 @@ buffer in which it was active."
   :type 'string
   :group 'org-centering)
 
-(defvar org-centring--label-width-cache nil)
+(defvar org-centering--label-width-cache nil)
 
 (defvar org-centering--numbering-label-width
-  (or org-centring--label-width-cache
+  (or org-centering--label-width-cache
       (and (fboundp '+org-get-latex-fragment-img)
            (let ((reference-width
                   (car (image-size (+org-get-latex-fragment-img "\\[.\\]") 'pixel)))
