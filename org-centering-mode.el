@@ -176,12 +176,14 @@ buffer in which it was active."
                                        (point-at-eol))))
         (setq width (- (* 2 width) org-centering--numbering-label-width)))
     (overlay-put ov 'before-string
-                 (make-string (max 0
-                                   (- (round (- (window-text-width nil 'pixel)
-                                                width)
-                                             (* 2 org-centering--char-pixel-width))
-                                      offset))
-                              ? ))))
+                 (propertize
+                  (make-string
+                   (max 0
+                        (- (round (- (window-text-width nil 'pixel)
+                                     width)
+                                  (* 2 org-centering--char-pixel-width))
+                           offset))
+                   ? ) 'face 'org-latex-and-related))))
 
 (defun org-centering-ensure-latex-centering-a (beg end image &optional imagetype)
   "Assume to be used as an advice for `org--make-preview-overlay'.
