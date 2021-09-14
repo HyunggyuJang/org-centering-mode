@@ -91,12 +91,12 @@ buffer in which it was active."
 (define-minor-mode org-centering-mode
   "Minor mode for centering org mode inline overlays."
   :init-value nil :lighter nil :global nil
-  (if org-centering-mode
-      (setq org-centering--char-pixel-width
-            (let ((pt (point)))
-                (aref (aref (font-get-glyphs (font-at pt) pt (1+ pt)) 0) 4)))
-      (org-centering--enable)
-    (org-centering--disable)))
+  (if (not org-centering-mode)
+      (org-centering--disable)
+    (setq org-centering--char-pixel-width
+          (let ((pt (point)))
+            (aref (aref (font-get-glyphs (font-at pt) pt (1+ pt)) 0) 4)))
+    (org-centering--enable)))
 
 (defsubst org-centering--inlineimage-centering-internal (ov img)
   "Internal function for centering inline images."
