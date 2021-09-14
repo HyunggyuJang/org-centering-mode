@@ -94,8 +94,7 @@ buffer in which it was active."
   (if (not org-centering-mode)
       (org-centering--disable)
     (setq org-centering--char-pixel-width
-          (let ((pt (point)))
-            (aref (aref (font-get-glyphs (font-at pt) pt (1+ pt)) 0) 4)))
+          (default-font-width))
     (org-centering--enable)))
 
 (defsubst org-centering--inlineimage-centering-internal (ov img)
