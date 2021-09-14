@@ -93,7 +93,8 @@ buffer in which it was active."
   :init-value nil :lighter nil :global nil
   (if org-centering-mode
       (setq org-centering--char-pixel-width
-            (aref (aref (font-get-glyphs (font-at (point)) 65 66) 0) 4))
+            (let ((pt (point)))
+                (aref (aref (font-get-glyphs (font-at pt) pt (1+ pt)) 0) 4)))
       (org-centering--enable)
     (org-centering--disable)))
 
