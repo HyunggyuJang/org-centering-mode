@@ -30,7 +30,7 @@
 (defvar org-centering--buffers nil
   "List of buffers in which `org-centering-mode' is activated.")
 
-(defvar org-centering--char-pixel-width
+(defvar-local org-centering--char-pixel-width
   (frame-char-width)
   "Character width in pixel size.")
 
@@ -92,6 +92,8 @@ buffer in which it was active."
   "Minor mode for centering org mode inline overlays."
   :init-value nil :lighter nil :global nil
   (if org-centering-mode
+      (setq org-centering--char-pixel-width
+            (aref (aref (font-get-glyphs (font-at (point)) 65 66) 0) 4))
       (org-centering--enable)
     (org-centering--disable)))
 
