@@ -94,7 +94,9 @@ buffer in which it was active."
   (if (not org-centering-mode)
       (org-centering--disable)
     (setq org-centering--char-pixel-width
-          (default-font-width))
+          (thread-first (face-font 'fixed-pitch)
+            (font-info)
+            (aref 11)))
     (org-centering--enable)))
 
 (defsubst org-centering--inlineimage-centering-internal (ov img)
@@ -119,7 +121,7 @@ buffer in which it was active."
                     (+ width
                        (car (image-size (overlay-get contingent-ov 'display) 'pixel)))))
           (setq offset (max (- (round (- (window-text-width nil 'pixel) width) (* 2 org-centering--char-pixel-width)) offset) 0))
-          (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'org-latex-and-related)))))
+          (overlay-put ov 'before-string (propertize (make-string offset ?  t) 'face 'fixed-pitch)))))
 
 (defun org-centering-ensure-inlineimage-centering-a (orig-fn &rest args)
   (if org-centering-mode
@@ -185,7 +187,7 @@ buffer in which it was active."
                                      width)
                                   (* 2 org-centering--char-pixel-width))
                            offset))
-                   ? ) 'face 'org-latex-and-related))))
+                   ? ) 'face 'fixed-pitch))))
 
 (defun org-centering-ensure-latex-centering-a (beg end image &optional imagetype)
   "Assume to be used as an advice for `org--make-preview-overlay'.
