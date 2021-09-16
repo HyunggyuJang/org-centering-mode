@@ -152,12 +152,14 @@ buffer in which it was active."
 (defvar org-centering--numbering-label-width
   (or org-centering--label-width-cache
       (and (fboundp '+org-get-latex-fragment-img)
-           (let ((reference-width
-                  (car (image-size (+org-get-latex-fragment-img "\\[.\\]") 'pixel)))
-                 (tagged-width
-                  (car (image-size (+org-get-latex-fragment-img "\\begin{equation}\\tag{1}
+           (let* ((image-scaling-factor 1)
+                  (reference-width
+                   (car (image-size (+org-get-latex-fragment-img "\\[.\\]") 'pixel)))
+                  (tagged-width
+                   (car (image-size (+org-get-latex-fragment-img "\\begin{equation}\\tag{1}
 .
 \\end{equation}") 'pixel))))
+             (ignore image-scaling-factor)
              (- (* 2 tagged-width) reference-width)))
       1169)
   "Full width of numbering label.")
@@ -178,7 +180,10 @@ buffer in which it was active."
                        (save-excursion (goto-char beg)
                                        (setq offset (- beg (point-at-bol)))
                                        (point-at-eol))))
-        (setq width (- (* 2 width) org-centering--numbering-label-width)))
+        (setq width
+              (- (* 2 width)
+                 (* (image-compute-scaling-factor image-scaling-factor)
+                    org-centering--numbering-label-width))))
     (overlay-put ov 'before-string
                  (propertize
                   (make-string
