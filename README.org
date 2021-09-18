@@ -2,3 +2,17 @@
 
 #+attr_org: :width 800
 [[file:img/_20210704_181121screenshot.png]]
+
+* Caveat
+
+For centering works consistently, you have to configure =fixed-pitch= face with size specification, otherwise it might render misalignment upon default font change, i.e. mixed pitch mode, or variable pitch mode.
+
+Here is an example of desirable face setting.
+
+#+begin_src emacs-lisp
+  (custom-set-faces
+   '(default
+      ((t (:foreground "#37474F" :background "#FFFFFF" :family "Roboto Mono" :height 140 :weight light))))
+   '(fixed-pitch
+      ((t (:foreground "#37474F" :background "#FFFFFF" :family "Roboto Mono" :height 140 :weight light)))))
+#+end_src
