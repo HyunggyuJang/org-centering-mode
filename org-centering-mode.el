@@ -92,7 +92,7 @@ activated."
 Also run the functions in `org-centering-global-effects' to undo
 their effects if `org-centering-mode' is deactivated in the last
 buffer in which it was active."
-  (remove-hook 'window-configuration-change-hook 'local)
+  (remove-hook 'window-configuration-change-hook #'org-centering-enable-inlinefrags 'local)
   (org-centering-disable-inlinefrags)
   ;; Restore global effects if necessary.
   (setq org-centering--buffers (delq (current-buffer) org-centering--buffers))
