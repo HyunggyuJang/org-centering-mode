@@ -180,12 +180,16 @@ buffer in which it was active."
   "Internal function for centering latex fragments."
   (let ((width (car (image-size (overlay-get ov 'display) 'pixel)))
         offset)
-    (if (string-match org-centering-numbering-environments-regexp
-                      (buffer-substring-no-properties
-                       beg
-                       (save-excursion (goto-char beg)
-                                       (setq offset (- beg (point-at-bol)))
-                                       (point-at-eol))))
+    (if (string-match
+         org-centering-numbering-environments-regexp
+         (apply #'buffer-substring-no-properties
+                (save-excursion
+                  (goto-char beg)
+                  (setq offset (- beg (point-at-bol)))
+                  (while (= (char-after) ?#)
+                    (forward-line)
+                    (skip-chars-forward "[ \t]"))
+                  (list (point) (point-at-eol)))))
         (setq width
               (- (* 2 width)
                  (* (image-compute-scaling-factor image-scaling-factor)
