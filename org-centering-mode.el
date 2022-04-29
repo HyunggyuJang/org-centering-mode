@@ -148,7 +148,7 @@ buffer in which it was active."
     (apply orig-fn args)))
 
 (defcustom org-centering-numbering-environments-regexp
-  (regexp-opt (mapcar (lambda (env) (format "\\begin{%s}" env)) '("align" "equation" "gather")))
+  (regexp-opt (cons "\\tag{" (mapcar (lambda (env) (format "\\begin{%s}" env)) '("align" "equation" "gather"))))
   "LaTeX fragments with numbering label."
   :type 'string
   :group 'org-centering)
@@ -180,16 +180,13 @@ buffer in which it was active."
   "Internal function for centering latex fragments."
   (let ((width (car (image-size (overlay-get ov 'display) 'pixel)))
         offset)
-    (if (string-match
-         org-centering-numbering-environments-regexp
-         (apply #'buffer-substring-no-properties
-                (save-excursion
-                  (goto-char beg)
-                  (setq offset (- beg (point-at-bol)))
-                  (while (= (char-after) ?#)
-                    (forward-line)
-                    (skip-chars-forward "[ \t]"))
-                  (list (point) (point-at-eol)))))
+    (if (save-excursion
+          (goto-char beg)
+          (setq offset (- beg (point-at-bol)))
+          (search-forward-regexp
+           org-centering-numbering-environments-regexp
+           (overlay-end ov)
+           t))
         (setq width
               (- (* 2 width)
                  (* (image-compute-scaling-factor image-scaling-factor)
